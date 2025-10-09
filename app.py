@@ -629,27 +629,44 @@ def index():
 @app.route('/api/songs')
 def get_songs():
     try:
-        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/git/trees/{GITHUB_BRANCH}?recursive=1"
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
+        # url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/git/trees/{GITHUB_BRANCH}?recursive=1"
+        # response = requests.get(url, timeout=10)
+        # response.raise_for_status()
+        # data = response.json()
         
-        songs = []
-        for item in data.get("tree", []):
-            if item["path"].endswith(".mp3"):
-                filename = item["path"].split("/")[-1]
-                song_title = filename.replace(".mp3", "").replace("_", " ").replace("-", " ")
+        # songs = []
+        # for item in data.get("tree", []):
+        #     if item["path"].endswith(".mp3"):
+        #         filename = item["path"].split("/")[-1]
+        #         song_title = filename.replace(".mp3", "").replace("_", " ").replace("-", " ")
                 
-                # Use jsDelivr CDN for better performance and reliability
-                song_url = f"https://cdn.jsdelivr.net/gh/{GITHUB_USER}/{GITHUB_REPO}@{GITHUB_BRANCH}/{item['path']}"
+        #         # Use jsDelivr CDN for better performance and reliability
+        #         song_url = f"https://cdn.jsdelivr.net/gh/{GITHUB_USER}/{GITHUB_REPO}@{GITHUB_BRANCH}/{item['path']}"
                 
-                songs.append({
-                    "id": len(songs) + 1,
-                    "title": song_title,
-                    "artist": "Yagava Music",
-                    "cover": f"https://via.placeholder.com/300x300/667eea/ffffff?text={song_title[:1]}",
-                    "url": song_url
-                })
+        #         songs.append({
+        #             "id": len(songs) + 1,
+        #             "title": song_title,
+        #             "artist": "Yagava Music",
+        #             "cover": f"https://via.placeholder.com/300x300/667eea/ffffff?text={song_title[:1]}",
+        #             "url": song_url
+        #         })
+        songs = [
+    {
+        "id": 1,
+        "title": "File Example 5MG",
+        "artist": "Yagava Music",
+        "cover": "https://via.placeholder.com/300x300/667eea/ffffff?text=F",
+        "url": "https://cdn.jsdelivr.net/gh/kathirvelyv/yagava@main/file_example_MP3_5MG.mp3"
+    },
+    {
+        "id": 2,
+        "title": "Another Song",
+        "artist": "Yagava Music",
+        "cover": "https://via.placeholder.com/300x300/764ba2/ffffff?text=A",
+        "url": "https://cdn.jsdelivr.net/gh/kathirvelyv/yagava@main/another_song.mp3"
+    }
+]
+
         
         return jsonify(songs)
     
