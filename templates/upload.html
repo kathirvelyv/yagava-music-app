@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Music - Yagava</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .upload-page {
+            max-width: 600px;
+            margin: 50px auto;
+        }
+        .upload-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .upload-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .upload-header h1 {
+            font-size: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        .upload-header p {
+            color: #666;
+            font-size: 16px;
+        }
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            background: rgba(102, 126, 234, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 30px;
+        }
+        .upload-area:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #764ba2;
+        }
+        .upload-area.drag-over {
+            background: rgba(102, 126, 234, 0.15);
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+        .upload-icon {
+            font-size: 64px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .upload-text {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .upload-hint {
+            font-size: 14px;
+            color: #999;
+        }
+        .file-info {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .file-info.active {
+            display: block;
+        }
+        .file-details {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .file-details i {
+            font-size: 32px;
+            color: #667eea;
+        }
+        .file-meta h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .file-meta p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .upload-actions {
+            display: flex;
+            gap: 15px;
+        }
+        .upload-actions button {
+            flex: 1;
+        }
+        .btn-back {
+            background: #e5e7eb;
+            color: #333;
+        }
+        .btn-back:hover {
+            background: #d1d5db;
+        }
+        .progress-container-upload {
+            display: none;
+            margin-bottom: 20px;
+        }
+        .progress-container-upload.active {
+            display: block;
+        }
+        .progress-bar-upload {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        .upload-success {
+            background: #10b981;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            margin-bottom: 20px;
+        }
+        .upload-success.active {
+            display: block;
+        }
+        .upload-success i {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .error-message {
+            background: #ef4444;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .error-message.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container upload-page">
+        <div class="upload-card">
+            <div class="upload-header">
+                <h1><i class="fas fa-cloud-upload-alt"></i> Upload Music</h1>
+                <p>Add new songs to your music library</p>
+            </div>
+
+            {% if not is_admin %}
+            <div class="error-message active">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Unauthorized:</strong> You must be logged in as admin to upload music.
+            </div>
+            <a href="{{ url_for('player') }}" class="btn btn-primary" style="display: inline-block; text-decoration: none; text-align: center;">
+                <i class="fas fa-arrow-left"></i> Back to Player
+            </a>
+            {% else %}
+
+            <div id="errorMessage" class="error-message"></div>
+            
+            <div id="uploadSuccess" class="upload-success">
+                <i class="fas fa-check-circle"></i>
+                <h3>Upload Successful!</h3>
+                <p>Your song has been added to the library.</p>
+            </div>
+
+            <div id="progressContainer" class="progress-container-upload">
+                <div class="progress-bar-upload">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <p class="progress-text" id="progressText">Uploading... 0%</p>
+            </div>
+
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" id="fileInput" accept="audio/mp3,audio/wav,audio/ogg,audio/*" style="display: none;">
+                
+                <div id="uploadArea" class="upload-area">
+                    <div class="upload-icon">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <p class="upload-text">Drag & drop your music file here</p>
+                    <p class="upload-hint">or click to browse</p>
+                    <p class="upload-hint" style="margin-top: 15px;">
+                        <strong>Supported formats:</strong> MP3, WAV, OGG<br>
+                        <strong>Max size:</strong> 200MB
+                    </p>
+                </div>
+
+                <div id="fileInfo" class="file-info">
+                    <div class="file-details">
+                        <i class="fas fa-file-audio"></i>
+                        <div class="file-meta">
+                            <h3 id="fileName">No file selected</h3>
+                            <p id="fileSize">0 MB</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upload-actions">
+                    <a href="{{ url_for('player') }}" class="btn btn-back">
+                        <i class="fas fa-arrow-left"></i> Back to Player
+                    </a>
+                    <button type="submit" id="uploadBtn" class="btn btn-primary" disabled>
+                        <i class="fas fa-upload"></i> Upload Song
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const uploadSuccess = document.getElementById('uploadSuccess');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let selectedFile = null;
+
+        // Click to upload
+        if (uploadArea) {
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+        }
+
+        // Drag and drop
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0]);
+                }
+            });
+        }
+
+        // File selection
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+        }
+
+        function handleFileSelect(file) {
+            // Validate file type
+            const validTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/ogg'];
+            if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg)$/i)) {
+                showError('Invalid file type. Please upload MP3, WAV, or OGG files only.');
+                return;
+            }
+
+            // Validate file size (16MB)
+            if (file.size > 16 * 1024 * 1024) {
+                showError('File too large. Maximum size is 16MB.');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            fileInfo.classList.add('active');
+            uploadBtn.disabled = false;
+            hideError();
+        }
+
+        // Form submission
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                if (!selectedFile) {
+                    showError('Please select a file first.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                uploadBtn.disabled = true;
+                progressContainer.classList.add('active');
+                hideError();
+                uploadSuccess.classList.remove('active');
+
+                try {
+                    const xhr = new XMLHttpRequest();
+
+                    xhr.upload.addEventListener('progress', (e) => {
+                        if (e.lengthComputable) {
+                            const percentComplete = (e.loaded / e.total) * 100;
+                            progressFill.style.width = percentComplete + '%';
+                            progressText.textContent = `Uploading... ${Math.round(percentComplete)}%`;
+                        }
+                    });
+
+                    xhr.addEventListener('load', () => {
+                        if (xhr.status === 200) {
+                            const response = JSON.parse(xhr.responseText);
+                            progressContainer.classList.remove('active');
+                            uploadSuccess.classList.add('active');
+                            fileInfo.classList.remove('active');
+                            selectedFile = null;
+                            uploadBtn.disabled = true;
+                            fileInput.value = '';
+                            
+                            setTimeout(() => {
+                                uploadSuccess.classList.remove('active');
+                            }, 5000);
+                        } else {
+                            const response = JSON.parse(xhr.responseText);
+                            showError(response.error || 'Upload failed. Please try again.');
+                            progressContainer.classList.remove('active');
+                            uploadBtn.disabled = false;
+                        }
+                    });
+
+                    xhr.addEventListener('error', () => {
+                        showError('Network error. Please check your connection and try again.');
+                        progressContainer.classList.remove('active');
+                        uploadBtn.disabled = false;
+                    });
+
+                    xhr.open('POST', '/upload');
+                    xhr.send(formData);
+
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showError('An error occurred during upload. Please try again.');
+                    progressContainer.classList.remove('active');
+                    uploadBtn.disabled = false;
+                }
+            });
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
