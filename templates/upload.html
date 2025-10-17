@@ -296,9 +296,9 @@
                 return;
             }
 
-            // Validate file size (16MB)
-            if (file.size > 16 * 1024 * 1024) {
-                showError('File too large. Maximum size is 16MB.');
+            // Validate file size (200MB)
+            if (file.size > 200 * 1024 * 1024) {
+                showError('File too large. Maximum size is 200MB.');
                 return;
             }
 
