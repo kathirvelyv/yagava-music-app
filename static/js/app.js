@@ -231,6 +231,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         li.innerHTML = `
                             <span class="song-name">${song.name}</span>
                             <button class="play-btn"><i class="fas fa-play"></i></button>
+                            <a href="${song.url}" download class="download-btn" title="Download">
+                            <i class="fas fa-download"></i>
+                            </a>
                         `;
                         li.querySelector('.play-btn').onclick = () => playSong(index);
                         playlist.appendChild(li);
